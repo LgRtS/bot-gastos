@@ -8,6 +8,11 @@ app = Flask(__name__)
 lista_gastos = []
 total_gastos = 0.0
 
+@app.route("/", methods=["GET"])
+def home():
+    return "Bot de Gastos está Online! 🚀"
+
+
 @app.route("/bot", methods=["POST"])
 def whatsapp_bot():
     global total_gastos
