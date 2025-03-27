@@ -10,7 +10,7 @@ total_gastos = 0.0
 
 @app.route("/", methods=["GET"])
 def home():
-    return "Bot de Gastos está Online! 🚀"
+    return "O PAI TÁ ON! 🚀"
 
 @app.route("/bot", methods=["POST"])
 def whatsapp_bot():
