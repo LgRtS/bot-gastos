@@ -1,38 +1,43 @@
 import os
+import datetime
+import gspread
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
-import gspread
-import pandas as pd
-from datetime import datetime
+from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 
-# Dados em memória
+# Banco de dados simples (memória)
 lista_gastos = []
 total_gastos = 0.0
 
-# Configurar Google Sheets
-gc = gspread.service_account(filename='credentials.json')
-SHEET_NAME = "Controle de Gastos"
-try:
-    sh = gc.open(SHEET_NAME)
-except:
-    # Cria uma planilha caso não exista
-    sh = gc.create(SHEET_NAME)
-    sh.share(gc.auth.service_account_email, perm_type='user', role='writer')
+# Configuração do Google Sheets
+SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+CREDS_FILE = "credentials.json"  # O arquivo que você baixou no Google Cloud
+SHEET_NAME = "Controle de Gastos"  # Nome da sua planilha
 
-def salvar_no_google_sheets(nome, valor):
-    mes = datetime.now().strftime("%Y-%m")
+# Autenticação
+credentials = ServiceAccountCredentials.from_json_keyfile_name(CREDS_FILE, SCOPE)
+client = gspread.authorize(credentials)
+
+def registrar_gasto_planilha(nome, valor):
+    # Nome da aba com o mês atual
+    mes = datetime.datetime.now().strftime("%m-%Y")
     try:
-        worksheet = sh.worksheet(mes)
-    except:
-        worksheet = sh.add_worksheet(title=mes, rows="1000", cols="2")
-        worksheet.append_row(["Gasto", "Valor"])
-    worksheet.append_row([nome, f"R$ {valor:.2f}"])
+        sheet = client.open(SHEET_NAME).worksheet(mes)
+    except gspread.exceptions.WorksheetNotFound:
+        # Cria a aba caso não exista
+        sheet = client.open(SHEET_NAME).add_worksheet(title=mes, rows="1000", cols="2")
+        sheet.append_row(["Gasto", "Valor"])
+
+    # Registra o gasto
+    sheet.append_row([nome, f"{valor:.2f}"])
+
 
 @app.route("/", methods=["GET"])
 def home():
     return "Bot de Gastos está Online! 🚀"
+
 
 @app.route("/bot", methods=["POST"])
 def whatsapp_bot():
@@ -55,11 +60,11 @@ def whatsapp_bot():
     elif msg.lower() == "delete":
         if lista_gastos:
             removido = lista_gastos.pop()
-            valor = float(removido.split("R$ ")[1])
-            total_gastos -= valor
+            valor_removido = float(removido.split("R$ ")[1])
+            total_gastos -= valor_removido
             response.message(f"Gasto removido: {removido} ❌\nTotal atual: R$ {total_gastos:.2f}")
         else:
-            response.message("Nenhum gasto para remover!")
+            response.message("Nenhum gasto para remover! 🗑️")
 
     else:
         try:
@@ -67,12 +72,16 @@ def whatsapp_bot():
             valor = float(valor.replace(",", "."))
             lista_gastos.append(f"{nome} - R$ {valor:.2f}")
             total_gastos += valor
-            salvar_no_google_sheets(nome, valor)
+
+            # Registrar na planilha
+            registrar_gasto_planilha(nome, valor)
+
             response.message(f"Gasto registrado: {nome} - R$ {valor:.2f} 💰\nTotal atual: R$ {total_gastos:.2f}")
         except ValueError:
             response.message("Formato inválido! Envie no formato: Nome - Valor\nEx: Uber - 15.57")
 
     return str(response)
+
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
