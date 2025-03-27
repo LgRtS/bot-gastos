@@ -8,7 +8,7 @@ app = Flask(__name__)
 lista_gastos = []
 total_gastos = 0.0
 
-@app.route("/whatsapp", methods=["POST"])
+@app.route("/bot", methods=["POST"])
 def whatsapp_bot():
     global total_gastos
     msg = request.form.get("Body").strip()
