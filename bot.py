@@ -18,19 +18,19 @@ def whatsapp_bot():
     msg = request.form.get("Body").strip()
     response = MessagingResponse()
 
-    if msg.lower() == "Limpar":
+    if msg.lower() in  ["resetar", "limpar"]:
         lista_gastos.clear()
         total_gastos = 0.0
         response.message("Todos os gastos foram resetados! ✅")
 
-    elif msg.lower() == "Lista":
+    elif msg.lower() == "lista":
         if not lista_gastos:
             response.message("Nenhum gasto registrado ainda! 📝")
         else:
             lista_texto = "\n".join([f"{i+1}⃣ {item}" for i, item in enumerate(lista_gastos)])
             response.message(f"\U0001F4DC Lista de Gastos:\n{lista_texto}\n\n\U0001F4B0 Total: R$ {total_gastos:.2f}")
 
-    elif msg.lower() == "Remover":
+    elif msg.lower() in ["remover","deletar"]:
         if lista_gastos:
             removido = lista_gastos.pop()
             valor_removido = float(removido.split("R$ ")[1])
