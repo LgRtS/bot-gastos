@@ -10,7 +10,7 @@ total_gastos = 0.0
 
 @app.route("/", methods=["GET"])
 def home():
-    return "O PAI TÁ ON! 🚀"
+    return "O BOT TÁ ON! 🚀"
 
 @app.route("/bot", methods=["POST"])
 def whatsapp_bot():
@@ -18,19 +18,19 @@ def whatsapp_bot():
     msg = request.form.get("Body").strip()
     response = MessagingResponse()
 
-    if msg.lower() == "reset":
+    if msg.lower() == "Limpar":
         lista_gastos.clear()
         total_gastos = 0.0
         response.message("Todos os gastos foram resetados! ✅")
 
-    elif msg.lower() == "list":
+    elif msg.lower() == "Lista":
         if not lista_gastos:
             response.message("Nenhum gasto registrado ainda! 📝")
         else:
             lista_texto = "\n".join([f"{i+1}⃣ {item}" for i, item in enumerate(lista_gastos)])
             response.message(f"\U0001F4DC Lista de Gastos:\n{lista_texto}\n\n\U0001F4B0 Total: R$ {total_gastos:.2f}")
 
-    elif msg.lower() == "undo":
+    elif msg.lower() == "Remover":
         if lista_gastos:
             removido = lista_gastos.pop()
             valor_removido = float(removido.split("R$ ")[1])
